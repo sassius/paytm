@@ -2,6 +2,7 @@ const express = require("express");
 const {User} = require("../db")
 const zod = require("zod");
 const jwt = require("jsonwebtoken");;
+const {authMiddleware} = require("../middlewares/middleware")
 const router = express.Router();
 
 const signupSchema = zod.object({
@@ -14,6 +15,11 @@ const signinSchema = zod.object({
     userName : zod.string().email(),
     password : zod.string()
 })
+const updatebody = zod.object({
+  password: zod.string().optional(),
+  firstName: zod.string().optional(),
+  lastName: zod.string().optional(),
+});
 router.post("/signup",async (req,res)=>{
     const body = req.body;
     const {success} = signupSchema.safeParse(body);
@@ -72,6 +78,22 @@ router.post("/signin",async (req,res)=>{
     });
 })
 
+router.put("/",authMiddleware,async(req,res)=>{
+    const {success} = updatebody.safeParse(req.body)
+    if(!success){
+        res.status(411).json({
+          message: "Error while updating information",
+        });
+    }
+
+    await User.updateOne({
+        _id:req.userid
+    },req.updatebody)
+
+    res.status(200).json({
+      message: "Updated successfully",
+    });
+})  
 module.exports = {
     router
 }
